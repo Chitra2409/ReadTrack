@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ReadTrack</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header>
+      <img src="../assets/icons/icon32.png" alt="ReadTrack" width="20" height="20" />
+      <span class="app-name">ReadTrack</span>
+    </header>
+
+    <main>
+      <section class="card" id="current-site-card">
+        <p class="label">Current site</p>
+        <p class="domain" id="current-domain">—</p>
+        <p class="time" id="current-time">0s</p>
+      </section>
+
+      <section class="card" id="today-card">
+        <p class="label">Total today</p>
+        <p class="time" id="today-total">0s</p>
+      </section>
+
+      <section id="top-sites">
+        <p class="label">Top sites today</p>
+        <ul id="top-sites-list"></ul>
+      </section>
+    </main>
+
+    <script src="popup.js" type="module"></script>
+  </body>
+</html>
