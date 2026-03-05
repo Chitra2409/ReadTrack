@@ -1,0 +1,14 @@
+# Personal documentation — not for the repository
+PLAN.md
+PROCESS.md
+INSTRUCTIONS.md
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor config
+.vscode/
+.idea/
+*.suo
+*.user
