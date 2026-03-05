@@ -3,6 +3,7 @@
 
 import { getToday } from "../utils/storage.js";
 import { formatMs } from "../utils/time.js";
+import { categorize } from "../utils/categorizer.js";
 
 const TOP_SITES_LIMIT = 5;
 
@@ -38,12 +39,18 @@ async function render() {
 
   // Current site
   if (activeDomain) {
+    const [siteCategory] = await Promise.all([
+      categorize(activeDomain, (await chrome.tabs.query({ active: true, currentWindow: true }))[0]?.url ?? ""),
+    ]);
+
     document.getElementById("current-domain").textContent = activeDomain;
     const siteMs = today.byDomain[activeDomain] ?? 0;
     document.getElementById("current-time").textContent = formatMs(siteMs);
+    document.getElementById("current-category").textContent = siteCategory;
   } else {
     document.getElementById("current-domain").textContent = "Not a web page";
     document.getElementById("current-time").textContent = "—";
+    document.getElementById("current-category").textContent = "";
   }
 
   // Top sites list
