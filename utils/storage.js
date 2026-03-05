@@ -34,24 +34,25 @@ export function storageSet(key, value) {
 }
 
 /**
- * Adds `ms` milliseconds to the tracked time for `domain` on today's date.
+ * Adds `ms` milliseconds to the tracked time for `domain` and `category` on today's date.
  * Creates the day entry if it does not exist yet.
  */
-export async function addTime(domain, ms) {
+export async function addTime(domain, category, ms) {
   if (!domain || ms <= 0) return;
 
   const key = todayKey();
-  const day = await storageGet(key, { totalMs: 0, byDomain: {} });
+  const day = await storageGet(key, { totalMs: 0, byDomain: {}, byCategory: {} });
 
   day.totalMs = (day.totalMs || 0) + ms;
   day.byDomain[domain] = (day.byDomain[domain] || 0) + ms;
+  day.byCategory[category] = (day.byCategory[category] || 0) + ms;
 
   await storageSet(key, day);
 }
 
 /**
- * Returns today's aggregated data: { totalMs, byDomain }
+ * Returns today's aggregated data: { totalMs, byDomain, byCategory }
  */
 export async function getToday() {
-  return storageGet(todayKey(), { totalMs: 0, byDomain: {} });
+  return storageGet(todayKey(), { totalMs: 0, byDomain: {}, byCategory: {} });
 }
