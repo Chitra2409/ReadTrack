@@ -2,6 +2,7 @@
 // Tracks time spent on each domain by listening to tab and window focus events.
 
 import { addTime } from "../utils/storage.js";
+import { categorize } from "../utils/categorizer.js";
 
 const IDLE_THRESHOLD_SECS = 30;
 
@@ -39,7 +40,8 @@ async function flushSession() {
   const domain = extractDomain(activeUrl);
 
   if (domain && elapsed > 0) {
-    await addTime(domain, elapsed);
+    const category = await categorize(domain, activeUrl);
+    await addTime(domain, category, elapsed);
   }
 
   sessionStart = null;
