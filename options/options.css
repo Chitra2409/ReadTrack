@@ -164,3 +164,48 @@ button[type="submit"]:hover {
   text-align: center;
   padding: 12px 0;
 }
+
+/* Export buttons */
+.button-row {
+  display: flex;
+  gap: 10px;
+}
+
+.button-row button {
+  padding: 8px 16px;
+  background: #4a7cf7;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.button-row button:hover {
+  background: #3a6be0;
+}
+
+/* Danger zone */
+.danger-card {
+  border: 1px solid #fde8e4;
+}
+
+.danger-btn {
+  padding: 8px 16px;
+  background: #fff;
+  color: #e0442a;
+  border: 1px solid #e0442a;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  align-self: flex-start;
+}
+
+.danger-btn:hover {
+  background: #e0442a;
+  color: #fff;
+}

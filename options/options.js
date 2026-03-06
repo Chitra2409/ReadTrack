@@ -1,7 +1,7 @@
 // options/options.js
 // Manages user-defined category overrides for specific domains.
 
-import { storageGet, storageSet } from "../utils/storage.js";
+import { storageGet, storageSet, todayKey } from "../utils/storage.js";
 
 const STORAGE_KEY = "categoryOverrides";
 
@@ -116,5 +116,58 @@ form.addEventListener("submit", async (e) => {
   categorySelect.value = "";
 });
 
-// Add a link to the options page from the manifest
+// --- Export -----------------------------------------------------------------
+
+function getAllStorage() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get(null, resolve);
+  });
+}
+
+function downloadFile(filename, content, mimeType) {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById("export-json").addEventListener("click", async () => {
+  const data = await getAllStorage();
+  const filename = `readtrack-export-${todayKey()}.json`;
+  downloadFile(filename, JSON.stringify(data, null, 2), "application/json");
+});
+
+document.getElementById("export-csv").addEventListener("click", async () => {
+  const data = await getAllStorage();
+  const rows = [["date", "domain", "milliseconds", "seconds", "minutes"]];
+
+  for (const [key, value] of Object.entries(data)) {
+    // Only process day entries (YYYY-MM-DD keys)
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(key)) continue;
+    for (const [domain, ms] of Object.entries(value.byDomain ?? {})) {
+      rows.push([key, domain, ms, Math.floor(ms / 1000), (ms / 60000).toFixed(2)]);
+    }
+  }
+
+  const csv = rows.map((r) => r.join(",")).join("\n");
+  downloadFile(`readtrack-export-${todayKey()}.csv`, csv, "text/csv");
+});
+
+// --- Clear all data ---------------------------------------------------------
+
+document.getElementById("clear-data").addEventListener("click", async () => {
+  const confirmed = window.confirm(
+    "This will permanently delete all your reading history and settings. Are you sure?"
+  );
+  if (!confirmed) return;
+
+  await new Promise((resolve) => chrome.storage.local.clear(resolve));
+  await renderList();
+});
+
+// --- Init -------------------------------------------------------------------
+
 renderList();
