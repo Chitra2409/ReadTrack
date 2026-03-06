@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ReadTrack — Stats</title>
+    <link rel="stylesheet" href="stats.css" />
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <img src="../assets/icons/icon32.png" alt="ReadTrack" width="24" height="24" />
+        <h1>Reading Stats</h1>
+      </header>
+
+      <!-- Weekly overview -->
+      <section class="card">
+        <h2>Last 7 days</h2>
+        <div class="week-summary">
+          <span id="week-total-label">Total: —</span>
+          <span id="week-avg-label">Daily avg: —</span>
+        </div>
+        <div class="bar-chart" id="weekly-chart"></div>
+      </section>
+
+      <!-- Category breakdown -->
+      <section class="card">
+        <h2>Today by category</h2>
+        <div id="category-breakdown"></div>
+      </section>
+
+      <!-- Per-domain list -->
+      <section class="card">
+        <h2>Today by site</h2>
+        <ul id="domain-list"></ul>
+      </section>
+    </div>
+
+    <script src="stats.js" type="module"></script>
+  </body>
+</html>
