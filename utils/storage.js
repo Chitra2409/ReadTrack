@@ -56,3 +56,30 @@ export async function addTime(domain, category, ms) {
 export async function getToday() {
   return storageGet(todayKey(), { totalMs: 0, byDomain: {}, byCategory: {} });
 }
+
+/**
+ * Returns an array of { date, totalMs, byDomain, byCategory } for the last `n` days
+ * (including today), ordered from oldest to newest.
+ */
+export async function getLastNDays(n) {
+  const days = [];
+  for (let i = n - 1; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    const key = `${yyyy}-${mm}-${dd}`;
+    days.push({ date: key, index: i });
+  }
+
+  const keys = days.map((d) => d.date);
+  const results = await new Promise((resolve) => {
+    chrome.storage.local.get(keys, resolve);
+  });
+
+  return days.map(({ date }) => ({
+    date,
+    ...(results[date] ?? { totalMs: 0, byDomain: {}, byCategory: {} }),
+  }));
+}
