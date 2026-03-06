@@ -17,3 +17,19 @@ export function formatMs(ms) {
   if (minutes > 0) return `${minutes}m ${seconds}s`;
   return `${seconds}s`;
 }
+
+/**
+ * Compact format for the extension icon badge (max ~4 chars).
+ * Examples: 90min → "1h2m" | 45min → "45m" | 30s → "30s"
+ */
+export function formatBadge(ms) {
+  if (ms <= 0) return "";
+
+  const totalSeconds = Math.floor(ms / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+
+  if (hours > 0) return `${hours}h${minutes}m`;
+  if (minutes > 0) return `${minutes}m`;
+  return `${totalSeconds}s`;
+}
