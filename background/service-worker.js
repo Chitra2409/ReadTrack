@@ -1,8 +1,9 @@
 // background/service-worker.js
 // Tracks time spent on each domain by listening to tab and window focus events.
 
-import { addTime } from "../utils/storage.js";
+import { addTime, getToday } from "../utils/storage.js";
 import { categorize } from "../utils/categorizer.js";
+import { formatBadge } from "../utils/time.js";
 
 const IDLE_THRESHOLD_SECS = 30;
 
@@ -42,6 +43,7 @@ async function flushSession() {
   if (domain && elapsed > 0) {
     const category = await categorize(domain, activeUrl);
     await addTime(domain, category, elapsed);
+    await updateBadge();
   }
 
   sessionStart = null;
@@ -120,5 +122,15 @@ chrome.idle.onStateChanged.addListener(async (state) => {
   }
 });
 
-// Set idle detection threshold on startup
+// --- Badge ------------------------------------------------------------------
+
+async function updateBadge() {
+  const today = await getToday();
+  const text = formatBadge(today.totalMs);
+  chrome.action.setBadgeText({ text });
+  chrome.action.setBadgeBackgroundColor({ color: "#4a7cf7" });
+}
+
+// Set idle detection threshold and initialise badge on startup
 chrome.idle.setDetectionInterval(IDLE_THRESHOLD_SECS);
+updateBadge();
