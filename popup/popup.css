@@ -126,3 +126,20 @@ main {
   text-align: center;
   padding: 8px 0;
 }
+
+footer {
+  padding: 8px 16px 12px;
+  text-align: center;
+  border-top: 1px solid #f0f0f0;
+}
+
+footer a {
+  font-size: 12px;
+  color: #4a7cf7;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+footer a:hover {
+  text-decoration: underline;
+}
