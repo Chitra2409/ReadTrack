@@ -34,27 +34,28 @@ export function storageSet(key, value) {
 }
 
 /**
- * Adds `ms` milliseconds to the tracked time for `domain` and `category` on today's date.
+ * Adds `ms` milliseconds for `domain`, `category`, and `subcategory` on today's date.
  * Creates the day entry if it does not exist yet.
  */
-export async function addTime(domain, category, ms) {
+export async function addTime(domain, category, subcategory, ms) {
   if (!domain || ms <= 0) return;
 
   const key = todayKey();
-  const day = await storageGet(key, { totalMs: 0, byDomain: {}, byCategory: {} });
+  const day = await storageGet(key, { totalMs: 0, byDomain: {}, byCategory: {}, bySubcategory: {} });
 
   day.totalMs = (day.totalMs || 0) + ms;
   day.byDomain[domain] = (day.byDomain[domain] || 0) + ms;
   day.byCategory[category] = (day.byCategory[category] || 0) + ms;
+  day.bySubcategory[subcategory] = (day.bySubcategory[subcategory] || 0) + ms;
 
   await storageSet(key, day);
 }
 
 /**
- * Returns today's aggregated data: { totalMs, byDomain, byCategory }
+ * Returns today's aggregated data: { totalMs, byDomain, byCategory, bySubcategory }
  */
 export async function getToday() {
-  return storageGet(todayKey(), { totalMs: 0, byDomain: {}, byCategory: {} });
+  return storageGet(todayKey(), { totalMs: 0, byDomain: {}, byCategory: {}, bySubcategory: {} });
 }
 
 /**
@@ -80,6 +81,6 @@ export async function getLastNDays(n) {
 
   return days.map(({ date }) => ({
     date,
-    ...(results[date] ?? { totalMs: 0, byDomain: {}, byCategory: {} }),
+    ...(results[date] ?? { totalMs: 0, byDomain: {}, byCategory: {}, bySubcategory: {} }),
   }));
 }
