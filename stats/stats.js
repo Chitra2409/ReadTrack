@@ -4,6 +4,7 @@
 
 import { getLastNDays } from "../utils/storage.js";
 import { formatMs } from "../utils/time.js";
+import { SUBCATEGORY_TO_CATEGORY } from "../utils/categorizer.js";
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -15,6 +16,7 @@ const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 function aggregateDays(days) {
   const byDomain = {};
   const byCategory = {};
+  const bySubcategory = {};
   let totalMs = 0;
 
   for (const day of days) {
@@ -26,9 +28,12 @@ function aggregateDays(days) {
     for (const [category, ms] of Object.entries(day.byCategory || {})) {
       byCategory[category] = (byCategory[category] || 0) + ms;
     }
+    for (const [subcategory, ms] of Object.entries(day.bySubcategory || {})) {
+      bySubcategory[subcategory] = (bySubcategory[subcategory] || 0) + ms;
+    }
   }
 
-  return { totalMs, byDomain, byCategory };
+  return { totalMs, byDomain, byCategory, bySubcategory };
 }
 
 // --- Bar chart --------------------------------------------------------------
@@ -80,15 +85,13 @@ function renderChart(days) {
   }
 }
 
-// --- Category breakdown -----------------------------------------------------
+// --- Category breakdown (nested) --------------------------------------------
 
 function renderCategoryBreakdown(aggregate) {
   const container = document.getElementById("category-breakdown");
   container.innerHTML = "";
 
-  const entries = Object.entries(aggregate.byCategory).sort(([, a], [, b]) => b - a);
-
-  if (entries.length === 0) {
+  if (Object.keys(aggregate.byCategory).length === 0) {
     const empty = document.createElement("p");
     empty.className = "empty-state";
     empty.textContent = "No data for this period.";
@@ -96,14 +99,17 @@ function renderCategoryBreakdown(aggregate) {
     return;
   }
 
-  const maxMs = entries[0][1];
+  // Sort parent categories by time
+  const parentEntries = Object.entries(aggregate.byCategory).sort(([, a], [, b]) => b - a);
+  const maxCategoryMs = parentEntries[0][1];
 
-  for (const [category, ms] of entries) {
-    const pct = Math.round((ms / aggregate.totalMs) * 100);
-    const barWidth = Math.round((ms / maxMs) * 100);
+  for (const [category, categoryMs] of parentEntries) {
+    const pct = Math.round((categoryMs / aggregate.totalMs) * 100);
+    const barWidth = Math.round((categoryMs / maxCategoryMs) * 100);
 
-    const row = document.createElement("div");
-    row.className = "category-row";
+    // Parent row
+    const group = document.createElement("div");
+    group.className = "category-group";
 
     const meta = document.createElement("div");
     meta.className = "category-meta";
@@ -114,7 +120,7 @@ function renderCategoryBreakdown(aggregate) {
 
     const time = document.createElement("span");
     time.className = "category-time";
-    time.textContent = formatMs(ms);
+    time.textContent = formatMs(categoryMs);
 
     meta.appendChild(name);
     meta.appendChild(time);
@@ -127,9 +133,41 @@ function renderCategoryBreakdown(aggregate) {
     fill.style.width = `${barWidth}%`;
 
     track.appendChild(fill);
-    row.appendChild(meta);
-    row.appendChild(track);
-    container.appendChild(row);
+    group.appendChild(meta);
+    group.appendChild(track);
+
+    // Subcategory rows — find subcategories belonging to this parent
+    const subEntries = Object.entries(aggregate.bySubcategory)
+      .filter(([sub]) => SUBCATEGORY_TO_CATEGORY[sub] === category)
+      .sort(([, a], [, b]) => b - a);
+
+    if (subEntries.length > 0) {
+      const subList = document.createElement("div");
+      subList.className = "subcategory-list";
+
+      for (const [subcategory, subMs] of subEntries) {
+        const subPct = Math.round((subMs / categoryMs) * 100);
+
+        const subRow = document.createElement("div");
+        subRow.className = "subcategory-row";
+
+        const subName = document.createElement("span");
+        subName.className = "subcategory-name";
+        subName.textContent = `${subcategory} · ${subPct}%`;
+
+        const subTime = document.createElement("span");
+        subTime.className = "subcategory-time";
+        subTime.textContent = formatMs(subMs);
+
+        subRow.appendChild(subName);
+        subRow.appendChild(subTime);
+        subList.appendChild(subRow);
+      }
+
+      group.appendChild(subList);
+    }
+
+    container.appendChild(group);
   }
 }
 
