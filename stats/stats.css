@@ -48,6 +48,29 @@ h2 {
   color: #333;
 }
 
+/* Card header with inline dropdown */
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-header select {
+  padding: 4px 8px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #444;
+  background: #f8f8f8;
+  cursor: pointer;
+  outline: none;
+}
+
+.card-header select:focus {
+  border-color: #4a7cf7;
+}
+
 /* Weekly summary row */
 .week-summary {
   display: flex;

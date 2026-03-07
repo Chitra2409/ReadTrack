@@ -1,23 +1,48 @@
 // stats/stats.js
-// Renders the full stats page: weekly bar chart, category breakdown, per-domain list.
+// Renders the full stats page: bar chart, category breakdown, per-domain list.
+// All sections respond to the range dropdown and re-render on change.
 
-import { getLastNDays, getToday } from "../utils/storage.js";
+import { getLastNDays } from "../utils/storage.js";
 import { formatMs } from "../utils/time.js";
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-// --- Weekly chart -----------------------------------------------------------
+// --- Data helpers -----------------------------------------------------------
 
-function renderWeeklyChart(days) {
+/**
+ * Merges byDomain and byCategory across all days in the range into a single aggregate.
+ */
+function aggregateDays(days) {
+  const byDomain = {};
+  const byCategory = {};
+  let totalMs = 0;
+
+  for (const day of days) {
+    totalMs += day.totalMs || 0;
+
+    for (const [domain, ms] of Object.entries(day.byDomain || {})) {
+      byDomain[domain] = (byDomain[domain] || 0) + ms;
+    }
+    for (const [category, ms] of Object.entries(day.byCategory || {})) {
+      byCategory[category] = (byCategory[category] || 0) + ms;
+    }
+  }
+
+  return { totalMs, byDomain, byCategory };
+}
+
+// --- Bar chart --------------------------------------------------------------
+
+function renderChart(days) {
   const chart = document.getElementById("weekly-chart");
   chart.innerHTML = "";
 
   const maxMs = Math.max(...days.map((d) => d.totalMs), 1);
-  const weekTotal = days.reduce((sum, d) => sum + d.totalMs, 0);
+  const rangeTotal = days.reduce((sum, d) => sum + d.totalMs, 0);
   const daysWithData = days.filter((d) => d.totalMs > 0).length;
-  const avg = daysWithData > 0 ? weekTotal / daysWithData : 0;
+  const avg = daysWithData > 0 ? rangeTotal / daysWithData : 0;
 
-  document.getElementById("week-total-label").textContent = `Total: ${formatMs(weekTotal)}`;
+  document.getElementById("week-total-label").textContent = `Total: ${formatMs(rangeTotal)}`;
   document.getElementById("week-avg-label").textContent = `Daily avg: ${formatMs(avg)}`;
 
   const todayStr = new Date().toISOString().slice(0, 10);
@@ -25,8 +50,12 @@ function renderWeeklyChart(days) {
   for (const day of days) {
     const heightPct = Math.max((day.totalMs / maxMs) * 100, day.totalMs > 0 ? 2 : 0);
     const date = new Date(day.date + "T00:00:00");
-    const dayLabel = DAY_LABELS[date.getDay()];
     const isToday = day.date === todayStr;
+
+    // For ranges > 14 days show date number, otherwise show day name
+    const label = days.length > 14
+      ? String(date.getDate())
+      : DAY_LABELS[date.getDay()];
 
     const col = document.createElement("div");
     col.className = "bar-col";
@@ -42,7 +71,7 @@ function renderWeeklyChart(days) {
 
     const dayLabelEl = document.createElement("span");
     dayLabelEl.className = "bar-day";
-    dayLabelEl.textContent = dayLabel;
+    dayLabelEl.textContent = label;
 
     col.appendChild(timeLabel);
     col.appendChild(bar);
@@ -53,16 +82,16 @@ function renderWeeklyChart(days) {
 
 // --- Category breakdown -----------------------------------------------------
 
-function renderCategoryBreakdown(today) {
+function renderCategoryBreakdown(aggregate) {
   const container = document.getElementById("category-breakdown");
   container.innerHTML = "";
 
-  const entries = Object.entries(today.byCategory).sort(([, a], [, b]) => b - a);
+  const entries = Object.entries(aggregate.byCategory).sort(([, a], [, b]) => b - a);
 
   if (entries.length === 0) {
     const empty = document.createElement("p");
     empty.className = "empty-state";
-    empty.textContent = "No data yet for today.";
+    empty.textContent = "No data for this period.";
     container.appendChild(empty);
     return;
   }
@@ -70,7 +99,7 @@ function renderCategoryBreakdown(today) {
   const maxMs = entries[0][1];
 
   for (const [category, ms] of entries) {
-    const pct = Math.round((ms / today.totalMs) * 100);
+    const pct = Math.round((ms / aggregate.totalMs) * 100);
     const barWidth = Math.round((ms / maxMs) * 100);
 
     const row = document.createElement("div");
@@ -106,25 +135,21 @@ function renderCategoryBreakdown(today) {
 
 // --- Domain list ------------------------------------------------------------
 
-function renderDomainList(today) {
+function renderDomainList(aggregate) {
   const list = document.getElementById("domain-list");
   list.innerHTML = "";
 
-  const entries = Object.entries(today.byDomain).sort(([, a], [, b]) => b - a);
+  const entries = Object.entries(aggregate.byDomain).sort(([, a], [, b]) => b - a);
 
   if (entries.length === 0) {
     const empty = document.createElement("li");
     empty.className = "empty-state";
-    empty.textContent = "No sites tracked today.";
+    empty.textContent = "No sites tracked in this period.";
     list.appendChild(empty);
     return;
   }
 
   for (const [domain, ms] of entries) {
-    const category = today.byCategory
-      ? Object.entries(today.byCategory).find(([, v]) => v > 0)?.[0] ?? "Other"
-      : "Other";
-
     const li = document.createElement("li");
 
     const domainName = document.createElement("span");
@@ -145,13 +170,31 @@ function renderDomainList(today) {
   }
 }
 
-// --- Entry point ------------------------------------------------------------
+// --- Section heading updater ------------------------------------------------
 
-async function render() {
-  const [days, today] = await Promise.all([getLastNDays(7), getToday()]);
-  renderWeeklyChart(days);
-  renderCategoryBreakdown(today);
-  renderDomainList(today);
+function updateHeadings(n) {
+  const label = `Last ${n} days`;
+  document.getElementById("range-heading").textContent = label;
+  document.getElementById("category-heading").textContent = `${label} by category`;
+  document.getElementById("domain-heading").textContent = `${label} by site`;
 }
 
-render();
+// --- Entry point ------------------------------------------------------------
+
+async function render(n) {
+  const days = await getLastNDays(n);
+  const aggregate = aggregateDays(days);
+
+  updateHeadings(n);
+  renderChart(days);
+  renderCategoryBreakdown(aggregate);
+  renderDomainList(aggregate);
+}
+
+const rangeSelect = document.getElementById("range-select");
+
+rangeSelect.addEventListener("change", () => {
+  render(Number(rangeSelect.value));
+});
+
+render(Number(rangeSelect.value));
