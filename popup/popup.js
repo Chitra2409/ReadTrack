@@ -39,14 +39,13 @@ async function render() {
 
   // Current site
   if (activeDomain) {
-    const [siteCategory] = await Promise.all([
-      categorize(activeDomain, (await chrome.tabs.query({ active: true, currentWindow: true }))[0]?.url ?? ""),
-    ]);
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const { subcategory } = await categorize(activeDomain, tab?.url ?? "");
 
     document.getElementById("current-domain").textContent = activeDomain;
     const siteMs = today.byDomain[activeDomain] ?? 0;
     document.getElementById("current-time").textContent = formatMs(siteMs);
-    document.getElementById("current-category").textContent = siteCategory;
+    document.getElementById("current-category").textContent = subcategory;
   } else {
     document.getElementById("current-domain").textContent = "Not a web page";
     document.getElementById("current-time").textContent = "—";

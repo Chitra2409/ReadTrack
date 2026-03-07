@@ -41,8 +41,8 @@ async function flushSession() {
   const domain = extractDomain(activeUrl);
 
   if (domain && elapsed > 0) {
-    const category = await categorize(domain, activeUrl);
-    await addTime(domain, category, elapsed);
+    const { category, subcategory } = await categorize(domain, activeUrl);
+    await addTime(domain, category, subcategory, elapsed);
     await updateBadge();
   }
 
