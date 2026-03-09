@@ -3,7 +3,7 @@
 
 import { addTime, getToday } from "../utils/storage.js";
 import { categorize } from "../utils/categorizer.js";
-import { formatBadge } from "../utils/time.js";
+import { formatBadge, badgeColor } from "../utils/time.js";
 
 const IDLE_THRESHOLD_SECS = 30;
 
@@ -126,9 +126,8 @@ chrome.idle.onStateChanged.addListener(async (state) => {
 
 async function updateBadge() {
   const today = await getToday();
-  const text = formatBadge(today.totalMs);
-  chrome.action.setBadgeText({ text });
-  chrome.action.setBadgeBackgroundColor({ color: "#4a7cf7" });
+  chrome.action.setBadgeText({ text: formatBadge(today.totalMs) });
+  chrome.action.setBadgeBackgroundColor({ color: badgeColor(today.totalMs) });
 }
 
 // Set idle detection threshold and initialise badge on startup

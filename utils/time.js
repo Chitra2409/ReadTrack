@@ -20,16 +20,32 @@ export function formatMs(ms) {
 
 /**
  * Compact format for the extension icon badge (max ~4 chars).
- * Examples: 90min → "1h2m" | 45min → "45m" | 30s → "30s"
+ * Shows only the dominant unit for readability at small sizes.
+ * Examples: 5400000 → "1.5h" | 2700000 → "45m" | 45000 → "<1m"
  */
 export function formatBadge(ms) {
   if (ms <= 0) return "";
 
-  const totalSeconds = Math.floor(ms / 1000);
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const totalMinutes = ms / 60000;
 
-  if (hours > 0) return `${hours}h${minutes}m`;
-  if (minutes > 0) return `${minutes}m`;
-  return `${totalSeconds}s`;
+  if (totalMinutes < 1) return "<1m";
+  if (totalMinutes < 60) return `${Math.floor(totalMinutes)}m`;
+
+  const hours = totalMinutes / 60;
+  // Show one decimal only when it adds info (e.g. 1.5h), drop it for whole hours
+  return Number.isInteger(Math.round(hours * 2) / 2) && hours % 1 === 0
+    ? `${Math.floor(hours)}h`
+    : `${(Math.round(hours * 2) / 2).toFixed(1)}h`;
+}
+
+/**
+ * Returns a badge background color based on daily reading time.
+ * Gray → Blue → Green → Orange as reading time increases.
+ */
+export function badgeColor(ms) {
+  const minutes = ms / 60000;
+  if (minutes < 30)  return "#888888"; // < 30 min  — neutral gray
+  if (minutes < 60)  return "#4a7cf7"; // 30–60 min — blue
+  if (minutes < 120) return "#2db670"; // 1–2 hours — green
+  return "#f7934a";                    // > 2 hours — orange
 }
