@@ -1,6 +1,6 @@
 // stats/stats.js
 // Renders the full stats page: bar chart, category breakdown, per-domain list.
-// All sections respond to the range dropdown and re-render on change.
+// All sections respond to the range dropdown and day-of-week filter.
 
 import { getLastNDays } from "../utils/storage.js";
 import { formatMs } from "../utils/time.js";
@@ -210,20 +210,53 @@ function renderDomainList(aggregate) {
 
 // --- Section heading updater ------------------------------------------------
 
-function updateHeadings(n) {
-  const label = `Last ${n} days`;
-  document.getElementById("range-heading").textContent = label;
-  document.getElementById("category-heading").textContent = `${label} by category`;
-  document.getElementById("domain-heading").textContent = `${label} by site`;
+function updateHeadings(n, selectedDay) {
+  const DAY_NAMES = ["Sundays", "Mondays", "Tuesdays", "Wednesdays", "Thursdays", "Fridays", "Saturdays"];
+  const rangeLabel = selectedDay !== null
+    ? `${DAY_NAMES[selectedDay]} in last ${n} days`
+    : `Last ${n} days`;
+
+  document.getElementById("range-heading").textContent = rangeLabel;
+  document.getElementById("category-heading").textContent = `${rangeLabel} by category`;
+  document.getElementById("domain-heading").textContent = `${rangeLabel} by site`;
 }
+
+// --- Day selector -----------------------------------------------------------
+
+let selectedDay = null; // 0 = Sun, 1 = Mon, … 6 = Sat, null = all days
+
+const dayButtons = document.querySelectorAll(".day-btn");
+
+dayButtons.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const day = Number(btn.dataset.day);
+
+    if (selectedDay === day) {
+      // Clicking the active day deselects it
+      selectedDay = null;
+      btn.classList.remove("active");
+    } else {
+      selectedDay = day;
+      dayButtons.forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+    }
+
+    render(Number(rangeSelect.value), selectedDay);
+  });
+});
 
 // --- Entry point ------------------------------------------------------------
 
-async function render(n) {
-  const days = await getLastNDays(n);
+async function render(n, dayFilter = null) {
+  let days = await getLastNDays(n);
+
+  if (dayFilter !== null) {
+    days = days.filter((d) => new Date(d.date + "T00:00:00").getDay() === dayFilter);
+  }
+
   const aggregate = aggregateDays(days);
 
-  updateHeadings(n);
+  updateHeadings(n, dayFilter);
   renderChart(days);
   renderCategoryBreakdown(aggregate);
   renderDomainList(aggregate);
@@ -232,7 +265,7 @@ async function render(n) {
 const rangeSelect = document.getElementById("range-select");
 
 rangeSelect.addEventListener("change", () => {
-  render(Number(rangeSelect.value));
+  render(Number(rangeSelect.value), selectedDay);
 });
 
-render(Number(rangeSelect.value));
+render(Number(rangeSelect.value), selectedDay);
